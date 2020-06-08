@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<script>
+			function getComments(videoId="oQI3GTWRQgI"){
+				test = $.ajax({
+						cache: false,
+						async: false,
+						url: `https://www.googleapis.com/youtube/v3/commentThreads?key=AIzaSyCnUkmbMNEND_suZs70mqNtf4xjM1KIdCs&videoId=${videoId}&part=snippet&maxResults=100&textFormat=plainText&order=relevance`})
+				return test.responseJSON.items
+			}
+
+			function getVideos(nextPage=null,videoId="oQI3GTWRQgI"){
+				if (nextPage == null) {
+					test = $.ajax({
+							cache: false,
+							async: false,
+							url: `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=50&playlistId=${videoId}&key=AIzaSyCnUkmbMNEND_suZs70mqNtf4xjM1KIdCs`})
+						} else {
+							test = $.ajax({
+							cache: false,
+							async: false,
+							url: `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=50&playlistId=${videoId}&pageToken=${nextPage}&key=AIzaSyCnUkmbMNEND_suZs70mqNtf4xjM1KIdCs`})
+				}
+				return [test.responseJSON.items,test.responseJSON.nextPageToken]
+			}
+
+			function append(arr1,arr2) {
+				return arr1.concat(arr2)
+			}
+
+			function getVideo(){
+				masterlist = Array()
+
+				playListId = 'PL35FE5C4B157509C9'
+				vids = $.ajax({cache: false, async: false, url :`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=0&playlistId=${playListId}&key=AIzaSyCnUkmbMNEND_suZs70mqNtf4xjM1KIdCs`}).responseJSON.pageInfo.totalResults
+				amount = Math.ceil(vids / 50) - 1
+				res = getVideos(null,playListId)
+				videos = res[0]
+				key = res[1]
+				allvideos = videos
+				for (i = 0; i < amount; i++) {
+					res = getVideos(key,playListId)
+					videos = res[0]
+					key = res[1]
+					allvideos = append(allvideos, videos)
+				}
+				masterlist.push(allvideos)
+				
+				playListId = 'PLHLoLiL1nL8G7_JGVKGefUxllIZnP39vU'
+				vids = $.ajax({cache: false, async: false, url :`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=0&playlistId=${playListId}&key=AIzaSyCnUkmbMNEND_suZs70mqNtf4xjM1KIdCs`}).responseJSON.pageInfo.totalResults
+				amount = Math.ceil(vids / 50) - 1
+				res = getVideos(null,playListId)
+				videos = res[0]
+				key = res[1]
+				allvideos = videos
+				for (i = 0; i < amount; i++) {
+					res = getVideos(key,playListId)
+					videos = res[0]
+					key = res[1]
+					allvideos = append(allvideos, videos)
+				}
+				masterlist.push(allvideos)
+				
+				playListId = 'PL5P5eGJK4qOed0YxZwsjGGrRnNeSsEYO1'
+				vids = $.ajax({cache: false, async: false, url :`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet%2CcontentDetails&maxResults=0&playlistId=${playListId}&key=AIzaSyCnUkmbMNEND_suZs70mqNtf4xjM1KIdCs`}).responseJSON.pageInfo.totalResults
+				amount = Math.ceil(vids / 50) - 1
+				res = getVideos(null,playListId)
+				videos = res[0]
+				key = res[1]
+				allvideos = videos
+				for (i = 0; i < amount; i++) {
+					res = getVideos(key,playListId)
+					videos = res[0]
+					key = res[1]
+					allvideos = append(allvideos, videos)
+				}
+				masterlist.push(allvideos)
+
+				return masterlist
+			}
+
+			function selectVideo(videos,vids){
+				videoId = Math.floor(Math.random() * vids)
+				return videos[videoId]
+			}
+
+			function selectComment(comments){
+				cum = comments.length
+				selector = Math.floor(Math.random() * (cum - 1))
+				return comments[selector]
+			}
+
+			function startGame(videos){
+				key = []
+				channelId = Math.floor(Math.random() * (3))
+				if (channelId == 0) {
+					key[0] = "Game Theory"
+				}else if(channelId == 1) {
+					key[0] = "Film Theory"
+				}else{
+					key[0] = "GTLive"
+				}
+				channel = videos[channelId]
+				video = selectVideo(channel,channel.length)
+				comments = getComments(video.snippet.resourceId.videoId)
+				comment = selectComment(comments)
+				date = comment.snippet.topLevelComment.snippet.publishedAt
+				if(new Date(date) <= new Date(1399852800000)){
+					key[1] = "Pre Film Theory"
+				}else if(new Date(date) <= new Date(1442188800000)){
+					key[1] = "Pre GTLive"
+				}else if(new Date(date) <= new Date(1505001600000)){
+					key[1] = "Pre modern"
+				}else{
+					key[1] = "Modern"
+				}
+				
+				key[2] = video.snippet.resourceId.videoId
+				key[3] = video.snippet.title
+				
+				return [comment,key]
+			}
+			
+			$(document).ready(function(){
+				//preload videos
+				videos = getVideo()
+				console.log('Finished loading')
+				$('select').attr('disabled',false)
+				$('button').attr('disabled',false)
+
+				game = startGame(videos)
+				comment = game[0]
+				answer = game[1]
+				$('#commentcont').text(comment.snippet.topLevelComment.snippet.textDisplay)
+
+				$('#submit').click(function(){
+					$('select').attr('disabled',true)
+
+					if(answer[0] == $('#channel').val()){
+						$('#outputChannel').css('color','green');
+					}else{
+						$('#outputChannel').css('color','red');
+					}
+					if(answer[1] == $('#time').val()){
+						$('#outputTime').css('color','green');
+					}else{
+						$('#outputTime').css('color','red');
+					}
+					$('#outputChannel').text(answer[0])
+					$('#outputTime').text(answer[1])
+					$('#youtubeName').text(answer[3])
+					$('#youtubePlayer').attr('src',`https://www.youtube.com/embed/${answer[2]}`)
+					$('#youtubePlayer').hide()
+					$('#youtubeName').css('display','flex')
+					$(this).toggle()
+					$('#refreshSubmit').toggle()
+				})
+
+				$('#refreshSubmit').click(function(){
+					hahas = startGame(videos)
+					haha = hahas[0].snippet.topLevelComment.snippet.textDisplay
+					answer = hahas[1]
+					$('#outputChannel').text("")
+					$('#outputTime').text("")
+					$('#youtubeName').text("")
+					$('#commentcont').text(haha)
+					$('#youtubePlayer').hide()
+					$('#youtubeName').hide()
+					$('select').attr('disabled',false)
+					$(this).toggle()
+					$('#submit').toggle()
+				})
+
+				$('#youtubeName').click(function(){
+					$(this).hide()
+					$('#youtubePlayer').css('display', 'block')
+				})
+
+			});
+		</script>
+		<style>
+			*{
+				font-family: Arial, Helvetica, sans-serif;
+				font-size: 20pt;
+			}
+
+			.inoutcont{
+				width: 75%;
+				margin-left: auto;
+				margin-right: auto;
+				border: 1px solid red;
+				padding: 10px;
+			}	
+
+			.inout{
+				width: 100%;
+				text-align: center;
+			}
+
+			.inout *{
+				margin-left: auto;
+				margin-right: auto;
+			}
+
+			.submit{
+				display: block;
+				margin-left: auto;
+				margin-right: auto;
+				width: 10em;
+				height: 2em;
+			}
+
+			select{
+				width: 10em;
+				display: block;
+				text-align: center;
+			}
+
+			#commentcont{
+				text-align: center;
+				border: 1px solid blue;
+				margin: 10px;
+				height: 5em;
+				overflow-y: auto;
+			}
+
+			#youtubePlayer{
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: 20px;
+				width: 550px;
+				height: 300px;
+				display: none;
+			}
+
+			#youtubeName{
+				margin-left: auto;
+				margin-right: auto;
+				margin-top: 20px;
+				display: none;
+				width: 550px;
+				height: 300px;
+				text-align: center;
+				border: 1px solid black;
+				justify-content:center;
+				align-items:center;
+			}
+
+		</style>
+	</head>
+	<body>
+		<div class="inoutcont">
+			<div id="commentcont" style="display:flex;justify-content:center;align-items:center;">Loading...</div>
+			<table class="inout">
+				<tr>
+					<th style="width: 50%;">Input</th>
+					<th style="width: 50%;">Output</th>
+				</tr>
+				<tr>
+					<td>
+						<select disabled id="channel">
+							<option value="Game Theory">Game Theory</option>
+							<option value="Film Theory">Film Theory</option>
+							<option value="GTLive">GTLive</option>
+						</select>
+					</td>
+					<td id="outputChannel"></td>
+				</tr>
+				<tr>
+					<td>
+						<select disabled id="time">
+							<option value="Pre Film Theory">Pre Film Theory</option>
+							<option value="Pre GTLive">Pre GTLive</option>
+							<option value="Pre Modern">Pre Modern</option>
+							<option value="Modern">Modern</option>
+						</select>
+					</td>
+					<td id="outputTime"></td>
+				</tr>
+			</table>
+			<div>
+				<button disabled class="submit" id="submit">Submit answers</button>
+				<button disabled class="submit" id="refreshSubmit" style="display: none;">New idiot</button>
+			</div>
+			<div id="youtubeName"></div>
+			<iframe id="youtubePlayer" width="550px" height="300px" src=""></iframe>
+		</div>
+	</body>
+	</html>
